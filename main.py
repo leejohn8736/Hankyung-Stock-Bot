@@ -9,7 +9,7 @@ KST = pytz.timezone("Asia/Seoul")
 
 
 def main():
-  # 1. 시간 검증 (KST 기준 04:00 ~ 21:00 인지 확인)
+  # 1. 시간 검증 (KST 기준 새벽 04:00 ~ 저녁 21:00 인지 확인)
   now_kst = datetime.now(KST)
   current_hour = now_kst.hour
 
@@ -20,7 +20,8 @@ def main():
     )
     return
 
-  print(f"[{now_kst.strftime('%Y-%m-%d %H:%M:%S')] 봇 실행 시작 (KST)")
+  time_str = now_kst.strftime("%Y-%m-%d %H:%M:%S")
+  print(f"[{time_str}] 봇 실행 시작 (KST)")
 
   # 2. KRX 종목 로드 및 뉴스 수집
   stock_map = load_krx_stocks()
@@ -57,9 +58,11 @@ def main():
         fin = item["fin"]
         msg_lines.append(
             f"<b>■ {market_label}: {item['name']} ({item['ticker']})</b>\n"
-            f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억 (증가)</b>\n"
+            f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억"
+            " (증가)</b>\n"
             f"• 유보율: <b>{fin['reserve']:,.1f}%</b>\n"
-            f"• 뉴스({item['section']}): <a href=\"{item['link']}\">{item['title']}</a>\n"
+            f"• 뉴스({item['section']}):"
+            f' <a href="{item["link"]}">{item["title"]}</a>\n'
         )
       else:
         msg_lines.append(

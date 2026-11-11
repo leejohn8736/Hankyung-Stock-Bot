@@ -40,15 +40,5 @@
   
  
 ## ⚙️ hankyoung-stock-bot/
- hankyoung-stock-bot/
-├── .github/
-│   └── workflows/
-│       └── run.yml           # GitHub Actions 자동화 스케줄러 (12분 주기)
-├── .gitignore                # 보안 파일(.env) 및 캐시 제외 설정
-├── config.py                 # 환경 변수 및 감시 키워드, 공통 설정 관리
-├── news_crawler.py           # 네이버 뉴스 실시간 검색 크롤링 모듈
-├── krx_filter.py             # KRX 종목 마스터 로드 및 네이버 금융 재무 필터
-├── telegram_bot.py           # 텔레그램 전송 모듈
-├── main.py                   # 메인 실행 스크립트 (KST 운영 시간 검증 및 프로세스 총괄)
-├── requirements.txt          # 필수 라이브러리 목록
-└── README.md                 # 프로젝트 설명서
+ 
+<img width="1024" height="559" alt="d8cbc72d-3437-4e80-85e1-09367605e474" src="https://github.com/user-attachments/assets/ff235da9-5239-439a-9877-df350ece1968" />

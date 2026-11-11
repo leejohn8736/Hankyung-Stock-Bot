@@ -6,7 +6,6 @@ from config import MIN_RESERVE_RATIO
 
 
 def load_krx_stocks():
-  """일반주와 우선주/스팩(잡주)을 모두 정상 로드합니다."""
   today_dt = datetime.now()
   stock_map = {}
 
@@ -34,11 +33,9 @@ def load_krx_stocks():
         if len(name) < 2:
           continue
 
-        # ETF, ETN, 인버스, 리츠 제외
         if any(x in name for x in ["인버스", "레버리지", "ETF", "ETN", "리츠"]):
           continue
 
-        # 📌 우선주(끝자리 0이 아니거나 '우'로 끝남) 및 스팩을 잡주로 정상 분류
         is_special = (
             not t.endswith("0")
             or name.endswith(("우", "우B", "우C"))
@@ -58,7 +55,6 @@ def load_krx_stocks():
 
 
 def check_financials(ticker, is_special=False):
-  """재무제표 검증 (잡주/우선주는 재무 데이터가 없어도 뉴스 호재만으로 통과 허용)"""
   if is_special:
     return True, {"op_prev": 0, "op_curr": 0, "reserve": 0}
 

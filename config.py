@@ -14,13 +14,26 @@ MONITOR_END_HOUR = 21
 # 재무 건전성 필터 기준 (유보율 500% 이상)
 MIN_RESERVE_RATIO = 500.0
 
-# 한국경제 RSS 피드 주소 딕셔너리
+# 📈 확장된 다중 언론사 RSS 피드 주소 딕셔너리
 RSS_FEEDS = {
-    "전체": "https://www.hankyung.com/feed/all-news",
-    "증권": "https://www.hankyung.com/feed/finance",
-    "경제": "https://www.hankyung.com/feed/economy",
-    "부동산": "https://www.hankyung.com/feed/realestate",
-    "IT": "https://www.hankyung.com/feed/it",
+    # 한국경제
+    "한경_전체": "https://www.hankyung.com/feed/all-news",
+    "한경_증권": "https://www.hankyung.com/feed/finance",
+    "한경_경제": "https://www.hankyung.com/feed/economy",
+    "한경_부동산": "https://www.hankyung.com/feed/realestate",
+    "한경_IT": "https://www.hankyung.com/feed/it",
+    # 매일경제
+    "매경_경제": "https://www.mk.co.kr/rss/30100041/",
+    "매경_기업경영": "https://www.mk.co.kr/rss/50100032/",
+    "매경_증권": "https://www.mk.co.kr/rss/50200011/",
+    # 매일경제TV
+    "매경TV_증권": "https://mbnmoney.mbn.co.kr/rss/news/stock",
+    # 서울경제
+    "서경_금융": "https://www.sedaily.com/rss/finance",
+    # 뉴스핌
+    "뉴스핌_산업": "http://rss.newspim.com/news/category/106",
+    "뉴스핌_증권금융": "http://rss.newspim.com/news/category/105",
+    "뉴스핌_글로벌": "http://rss.newspim.com/news/category/107",
 }
 
 # 뉴스 호재 가중치 키워드

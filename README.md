@@ -40,6 +40,7 @@
   
  
 ## ⚙️ hankyoung-stock-bot/
+ hankyoung-stock-bot/
 ├── .github/
 │   └── workflows/
 │       └── run.yml           # GitHub Actions 자동화 스케줄러 (12분 주기)

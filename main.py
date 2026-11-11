@@ -9,7 +9,6 @@ KST = pytz.timezone("Asia/Seoul")
 
 
 def main():
-  # 1. 시간 검증 (KST 기준 새벽 04:00 ~ 자정 24:00 인지 확인)
   now_kst = datetime.now(KST)
   current_hour = now_kst.hour
 
@@ -23,12 +22,17 @@ def main():
   time_str = now_kst.strftime("%Y-%m-%d %H:%M:%S")
   print(f"[{time_str}] 봇 실행 시작 (KST)")
 
-  # 2. KRX 종목 로드 및 1시간 이내 최신 뉴스 수집
   stock_map = load_krx_stocks()
   candidates = collect_recent_news(stock_map)
 
-  # 3. 시장별 최고 점수 종목 선별 및 재무 검증
-  selected = {}
+  # 시장별, 유형별(일반주 / 잡주) 최고 점수 종목 각각 1개씩 선별 (총 4개)
+  selected = {
+      "KOSPI_normal": None,
+      "KOSPI_special": None,
+      "KOSDAQ_normal": None,
+      "KOSDAQ_special": None,
+  }
+
   for market in ["KOSPI", "KOSDAQ"]:
     sorted_cands = sorted(
         candidates[market], key=lambda x: x["score"], reverse=True
@@ -41,44 +45,50 @@ def main():
         continue
       checked_tickers.add(ticker)
 
+      # 이미 해당 분류(일반/잡주)가 채워졌다면 패스
+      key_type = "special" if cand["is_special"] else "normal"
+      slot_key = f"{market}_{key_type}"
+      if selected[slot_key] is not None:
+        continue
+
       passed, fin_info = check_financials(ticker)
       if passed:
         cand["fin"] = fin_info
-        selected[market] = cand
+        selected[slot_key] = cand
+
+      # 4개 슬롯이 모두 채워지면 탐색 종료
+      if all(v is not None for v in selected.values()):
         break
 
-  # 4. 결과 발송 (조건 충족 종목이 없어도 텔레그램 전송)
   now_str = now_kst.strftime("%Y-%m-%d %H:%M")
-  if selected.get("KOSPI") or selected.get("KOSDAQ"):
-    msg_lines = [f"<b>🚨 [통합 경제지 실시간 수혜종목]</b>\n⏱ {now_str} (KST)\n"]
+  has_any = any(v is not None for v in selected.values())
 
-    for market_label, key in [("코스피", "KOSPI"), ("코스닥", "KOSDAQ")]:
-      item = selected.get(key)
-      if item:
-        fin = item["fin"]
-        msg_lines.append(
-            f"<b>■ {market_label}: {item['name']} ({item['ticker']})</b>\n"
-            f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억"
-            " (증가)</b>\n"
-            f"• 유보율: <b>{fin['reserve']:,.1f}%</b>\n"
-            f"• 뉴스({item['section']}):"
-            f' <a href="{item["link"]}">{item["title"]}</a>\n'
-        )
-      else:
-        msg_lines.append(
-            f"<b>■ {market_label}: 조건 충족 종목 없음</b>\n"
-        )
+  msg_lines = [f"<b>🚨 [통합 경제지 실시간 수혜종목 (총 4선)]</b>\n⏱ {now_str} (KST)\n"]
 
-    final_msg = "\n".join(msg_lines)
-    print(final_msg)
-    send_telegram(final_msg)
-  else:
-    no_result_msg = (
-        f"<b>🚨 [통합 경제지 실시간 수혜종목]</b>\n⏱ {now_str}"
-        " (KST)\n\n• 1시간 이내 조건 충족 종목 없음."
-    )
-    print(f"[{now_str}] 1시간 이내 조건 충족 종목 없음.")
-    send_telegram(no_result_msg)
+  categories = [
+      ("코스피 일반주", "KOSPI_normal"),
+      ("코스피 잡주(우선주/스팩)", "KOSPI_special"),
+      ("코스닥 일반주", "KOSDAQ_normal"),
+      ("코스닥 잡주(우선주/스팩)", "KOSDAQ_special"),
+  ]
+
+  for label, key in categories:
+    item = selected.get(key)
+    if item:
+      fin = item["fin"]
+      msg_lines.append(
+          f"<b>■ {label}: {item['name']} ({item['ticker']})</b>\n"
+          f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억</b>\n"
+          f"• 유보율: <b>{fin['reserve']:,.1f}%</b>\n"
+          f"• 뉴스({item['section']}):"
+          f' <a href="{item["link"]}">{item["title"]}</a>\n'
+      )
+    else:
+      msg_lines.append(f"<b>■ {label}: 조건 충족 종목 없음</b>\n")
+
+  final_msg = "\n".join(msg_lines)
+  print(final_msg)
+  send_telegram(final_msg)
 
 
 if __name__ == "__main__":

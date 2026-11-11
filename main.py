@@ -2,7 +2,7 @@ from datetime import datetime
 import pytz
 from config import MONITOR_END_HOUR, MONITOR_START_HOUR
 from krx_filter import check_financials, load_krx_stocks
-from rss_collector import collect_recent_news
+from news_crawler import collect_recent_news
 from telegram_bot import send_telegram
 
 KST = pytz.timezone("Asia/Seoul")
@@ -20,7 +20,7 @@ def main():
     return
 
   time_str = now_kst.strftime("%Y-%m-%d %H:%M:%S")
-  print(f"[{time_str}] 봇 실행 시작 (KST)")
+  print(f"[{time_str}] 실시간 키워드 뉴스 봇 실행 시작 (KST)")
 
   stock_map = load_krx_stocks()
   candidates = collect_recent_news(stock_map)
@@ -58,7 +58,9 @@ def main():
         break
 
   now_str = now_kst.strftime("%Y-%m-%d %H:%M")
-  msg_lines = [f"<b>🚨 [통합 경제지 실시간 수혜종목 (총 4선)]</b>\n⏱ {now_str} (KST)\n"]
+  msg_lines = [
+      f"<b>🚨 [실시간 키워드 뉴스 수혜종목 (총 4선)]</b>\n⏱ {now_str} (KST)\n"
+  ]
 
   categories = [
       ("코스피 일반주", "KOSPI_normal"),
@@ -72,7 +74,7 @@ def main():
     if item:
       fin = item["fin"]
       if item["is_special"]:
-        fin_text = "• 재무: 우선주/스팩 (뉴스 호재 기반 선정)\n"
+        fin_text = "• 재무: 우선주/스팩 (실시간 키워드 매칭)\n"
       else:
         fin_text = (
             f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억</b>\n"
@@ -81,8 +83,7 @@ def main():
       msg_lines.append(
           f"<b>■ {label}: {item['name']} ({item['ticker']})</b>\n"
           f"{fin_text}"
-          f"• 뉴스({item['section']}):"
-          f' <a href="{item["link"]}">{item["title"]}</a>\n'
+          f"• 뉴스: <a href=\"{item['link']}\">{item['title']}</a>\n"
       )
     else:
       msg_lines.append(f"<b>■ {label}: 조건 충족 종목 없음</b>\n")

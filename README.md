@@ -37,8 +37,7 @@
 4. **운영 시간 및 자동화**
    - **운영 시간:** KST 기준 매일 **새벽 04:00 ~ 자정 24:00**
    - **실행 주기:** GitHub Actions 및 외부 웹훅을 통해 12분마다 자동 실행됩니다.
-  
-hankyoung-stock-bot/
+   - hankyoung-stock-bot/
 ├── .github/
 │   └── workflows/
 │       └── run.yml           # GitHub Actions 자동화 스케줄러 (12분 주기)

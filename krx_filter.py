@@ -6,20 +6,9 @@ from config import MIN_RESERVE_RATIO
 
 
 def load_krx_stocks():
-  """스팩, 우선주, 리츠 등을 제외한 코스피/코스닥 일반종목 로드 (날짜 예외 처리 강화)"""
+  """일반주와 우선주/스팩(잡주)을 각각 분류하여 로드합니다."""
   today_dt = datetime.now()
   stock_map = {}
-  exclude_words = (
-      "스팩",
-      "우",
-      "우B",
-      "우C",
-      "리츠",
-      "인버스",
-      "레버리지",
-      "ETF",
-      "ETN",
-  )
 
   latest_day = None
   for i in range(7):
@@ -42,17 +31,32 @@ def load_krx_stocks():
       tickers = stock.get_market_ticker_list(latest_day, market=market)
       for t in tickers:
         name = stock.get_market_ticker_name(t)
-        if t.endswith("0") and not name.endswith(exclude_words) and len(name) >= 2:
-          stock_map[name] = {"ticker": t, "market": market}
+        if not t.endswith("0") or len(name) < 2:
+          continue
+
+        # ETF, ETN, 인버스, 리츠 등 제외
+        if any(
+            x in name
+            for x in ["인버스", "레버리지", "ETF", "ETN", "리츠"]
+        ):
+          continue
+
+        # 우선주 또는 스팩 판별 (True면 잡주/특수주)
+        is_special = name.endswith(("우", "우B", "우C")) or "스팩" in name
+
+        stock_map[name] = {
+            "ticker": t,
+            "market": market,
+            "is_special": is_special,
+        }
     except Exception as e:
       print(f"[경고] {market} 종목 로드 중 예외 발생: {e}")
 
-  print(f"[KRX 로드 완료] 총 {len(stock_map)}개 일반종목 마스터 로드")
+  print(f"[KRX 로드 완료] 총 {len(stock_map)}개 종목 마스터 로드")
   return stock_map
 
 
 def check_financials(ticker):
-  """네이버 금융 재무제표 크롤링: 영업이익 상승 및 유보율 검증"""
   url = f"https://finance.naver.com/item/main.naver?code={ticker}"
   headers = {"User-Agent": "Mozilla/5.0"}
   try:
@@ -82,7 +86,7 @@ def check_financials(ticker):
     if len(op_vals) < 2:
       return False, None
 
-    is_op_growing = (op_vals[-1] > op_vals[-2]) and (op_vals[-1] > 0)
+    is_op_good = op_vals[-1] > 0
 
     res_row = fin_df.loc["유보율", annual_cols].dropna()
     res_vals = pd.to_numeric(res_row, errors="coerce").dropna().values
@@ -90,7 +94,7 @@ def check_financials(ticker):
 
     is_reserve_good = latest_reserve >= MIN_RESERVE_RATIO
 
-    if is_op_growing and is_reserve_good:
+    if is_op_good and is_reserve_good:
       info = {
           "op_prev": op_vals[-2],
           "op_curr": op_vals[-1],

@@ -2,10 +2,9 @@ name: Hankyung Stock Bot
 
 on:
   schedule:
-    # KST 기준 04:00 ~ 21:00 매 12분마다 실행 (UTC 기준 19:00 ~ 12:00)
-    # 0,12,24,36,48 분마다 실행
-    - cron: '*/12 19-12 * * *'
-  workflow_dispatch: # 깃허브 웹에서 수동으로 즉시 실행할 수 있는 버튼 제공
+    # 매 12분마다 상시 실행 (UTC 기준 매일 실행, 파이썬 코드 내부에서 KST 04~21시 여부를 정밀 필터링합니다)
+    - cron: '*/12 * * * *'
+  workflow_dispatch:
 
 jobs:
   run-bot:

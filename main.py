@@ -47,7 +47,7 @@ def main():
         selected[market] = cand
         break
 
-  # 4. 결과 발송
+  # 4. 결과 발송 (조건 충족 종목이 없어도 텔레그램 전송)
   now_str = now_kst.strftime("%Y-%m-%d %H:%M")
   if selected.get("KOSPI") or selected.get("KOSDAQ"):
     msg_lines = [f"<b>🚨 [통합 경제지 실시간 수혜종목]</b>\n⏱ {now_str} (KST)\n"]
@@ -73,7 +73,12 @@ def main():
     print(final_msg)
     send_telegram(final_msg)
   else:
+    no_result_msg = (
+        f"<b>🚨 [통합 경제지 실시간 수혜종목]</b>\n⏱ {now_str}"
+        " (KST)\n\n• 1시간 이내 조건 충족 종목 없음."
+    )
     print(f"[{now_str}] 1시간 이내 조건 충족 종목 없음.")
+    send_telegram(no_result_msg)
 
 
 if __name__ == "__main__":

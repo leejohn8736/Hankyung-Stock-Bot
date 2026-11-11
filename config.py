@@ -7,9 +7,9 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# 모니터링 시간 설정 (KST 기준: 새벽 04시 ~ 저녁 21시)
+# 모니터링 시간 설정 (KST 기준: 새벽 04시 ~ 자정 24시)
 MONITOR_START_HOUR = 4
-MONITOR_END_HOUR = 21
+MONITOR_END_HOUR = 24
 
 # 재무 건전성 필터 기준 (유보율 500% 이상)
 MIN_RESERVE_RATIO = 500.0

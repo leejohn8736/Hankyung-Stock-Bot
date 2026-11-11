@@ -25,7 +25,6 @@ def collect_recent_news(stock_map):
         pub_parsed = entry.get("published_parsed")
         if pub_parsed:
           pub_timestamp = time.mktime(pub_parsed)
-          # 1시간보다 오래된 기사는 스킵
           if (now_timestamp - pub_timestamp) > time_threshold:
             continue
 
@@ -36,7 +35,7 @@ def collect_recent_news(stock_map):
 
         for name in sorted_names:
           if name in title:
-            seen_links.add(link)  # 중복 등록 방지 처리
+            seen_links.add(link)
             info = stock_map[name]
             candidates[info["market"]].append({
                 "name": name,

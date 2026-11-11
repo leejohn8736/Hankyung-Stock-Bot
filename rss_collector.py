@@ -1,29 +1,42 @@
+from datetime import datetime, timezone
+import time
 import feedparser
 from config import POSITIVE_KEYWORDS, RSS_FEEDS
 
 
 def collect_recent_news(stock_map):
-  """여러 언론사(한경, 매경, 서경, 뉴스핌 등) RSS 피드를 스캔하여 호재 후보군 추출"""
+  """여러 언론사 RSS 피드를 스캔하여 1시간 이내 최신 기사만 골라내고 중복 링크를 제거합니다."""
   candidates = {"KOSPI": [], "KOSDAQ": []}
   sorted_names = sorted(stock_map.keys(), key=len, reverse=True)
 
-  # 여러 언론사 RSS 채널을 순회하며 뉴스 수집
+  seen_links = set()  # 중복 뉴스 링크 방지용 세트
+  now_timestamp = time.time()
+  time_threshold = 60 * 60  # 60분 (1시간) 이내 기사만 허용
+
   for section, url in RSS_FEEDS.items():
     try:
       feed = feedparser.parse(url)
       for entry in feed.entries:
         link = entry.get("link", "").strip()
-        title = entry.get("title", "").strip()
-
-        if not link:
+        if not link or link in seen_links:
           continue
 
+        # 발행 시간 검증 (published_parsed가 있는 경우 최신성 필터링)
+        pub_parsed = entry.get("published_parsed")
+        if pub_parsed:
+          pub_timestamp = time.mktime(pub_parsed)
+          # 1시간보다 오래된 기사는 스킵
+          if (now_timestamp - pub_timestamp) > time_threshold:
+            continue
+
+        title = entry.get("title", "").strip()
         score = sum(2 for kw in POSITIVE_KEYWORDS if kw in title)
         if score == 0:
           continue
 
         for name in sorted_names:
           if name in title:
+            seen_links.add(link)  # 중복 등록 방지 처리
             info = stock_map[name]
             candidates[info["market"]].append({
                 "name": name,

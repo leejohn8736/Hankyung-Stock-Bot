@@ -25,7 +25,6 @@ def main():
   stock_map = load_krx_stocks()
   candidates = collect_recent_news(stock_map)
 
-  # 시장별, 유형별(일반주 / 잡주) 최고 점수 종목 각각 1개씩 선별 (총 4개)
   selected = {
       "KOSPI_normal": None,
       "KOSPI_special": None,
@@ -45,24 +44,20 @@ def main():
         continue
       checked_tickers.add(ticker)
 
-      # 이미 해당 분류(일반/잡주)가 채워졌다면 패스
       key_type = "special" if cand["is_special"] else "normal"
       slot_key = f"{market}_{key_type}"
       if selected[slot_key] is not None:
         continue
 
-      passed, fin_info = check_financials(ticker)
+      passed, fin_info = check_financials(ticker, is_special=cand["is_special"])
       if passed:
         cand["fin"] = fin_info
         selected[slot_key] = cand
 
-      # 4개 슬롯이 모두 채워지면 탐색 종료
       if all(v is not None for v in selected.values()):
         break
 
   now_str = now_kst.strftime("%Y-%m-%d %H:%M")
-  has_any = any(v is not None for v in selected.values())
-
   msg_lines = [f"<b>🚨 [통합 경제지 실시간 수혜종목 (총 4선)]</b>\n⏱ {now_str} (KST)\n"]
 
   categories = [
@@ -76,10 +71,16 @@ def main():
     item = selected.get(key)
     if item:
       fin = item["fin"]
+      if item["is_special"]:
+        fin_text = "• 재무: 우선주/스팩 (뉴스 호재 기반 선정)\n"
+      else:
+        fin_text = (
+            f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억</b>\n"
+            f"• 유보율: <b>{fin['reserve']:,.1f}%</b>\n"
+        )
       msg_lines.append(
           f"<b>■ {label}: {item['name']} ({item['ticker']})</b>\n"
-          f"• 영업이익: {fin['op_prev']:,.0f}억 ➔ <b>{fin['op_curr']:,.0f}억</b>\n"
-          f"• 유보율: <b>{fin['reserve']:,.1f}%</b>\n"
+          f"{fin_text}"
           f"• 뉴스({item['section']}):"
           f' <a href="{item["link"]}">{item["title"]}</a>\n'
       )

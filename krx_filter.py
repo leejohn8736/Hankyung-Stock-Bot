@@ -6,7 +6,7 @@ from config import MIN_RESERVE_RATIO
 
 
 def load_krx_stocks():
-  """일반주와 우선주/스팩(잡주)을 각각 분류하여 로드합니다."""
+  """일반주와 우선주/스팩(잡주)을 모두 정상 로드합니다."""
   today_dt = datetime.now()
   stock_map = {}
 
@@ -31,18 +31,19 @@ def load_krx_stocks():
       tickers = stock.get_market_ticker_list(latest_day, market=market)
       for t in tickers:
         name = stock.get_market_ticker_name(t)
-        if not t.endswith("0") or len(name) < 2:
+        if len(name) < 2:
           continue
 
-        # ETF, ETN, 인버스, 리츠 등 제외
-        if any(
-            x in name
-            for x in ["인버스", "레버리지", "ETF", "ETN", "리츠"]
-        ):
+        # ETF, ETN, 인버스, 리츠 제외
+        if any(x in name for x in ["인버스", "레버리지", "ETF", "ETN", "리츠"]):
           continue
 
-        # 우선주 또는 스팩 판별 (True면 잡주/특수주)
-        is_special = name.endswith(("우", "우B", "우C")) or "스팩" in name
+        # 📌 우선주(끝자리 0이 아니거나 '우'로 끝남) 및 스팩을 잡주로 정상 분류
+        is_special = (
+            not t.endswith("0")
+            or name.endswith(("우", "우B", "우C"))
+            or "스팩" in name
+        )
 
         stock_map[name] = {
             "ticker": t,
@@ -56,7 +57,11 @@ def load_krx_stocks():
   return stock_map
 
 
-def check_financials(ticker):
+def check_financials(ticker, is_special=False):
+  """재무제표 검증 (잡주/우선주는 재무 데이터가 없어도 뉴스 호재만으로 통과 허용)"""
+  if is_special:
+    return True, {"op_prev": 0, "op_curr": 0, "reserve": 0}
+
   url = f"https://finance.naver.com/item/main.naver?code={ticker}"
   headers = {"User-Agent": "Mozilla/5.0"}
   try:

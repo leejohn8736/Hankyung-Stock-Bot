@@ -7,7 +7,6 @@ from config import MIN_RESERVE_RATIO
 
 def load_krx_stocks():
   """스팩, 우선주, 리츠 등을 제외한 코스피/코스닥 일반종목 로드 (날짜 예외 처리 강화)"""
-  # 안전하게 오늘 날짜부터 역순으로 영업일 탐색
   today_dt = datetime.now()
   stock_map = {}
   exclude_words = (
@@ -23,7 +22,7 @@ def load_krx_stocks():
   )
 
   latest_day = None
-  for i in range(7):  # 최대 7일 전까지 탐색
+  for i in range(7):
     target_date = (today_dt - timedelta(days=i)).strftime("%Y%m%d")
     try:
       tickers = stock.get_market_ticker_list(target_date, market="KOSPI")
@@ -33,7 +32,6 @@ def load_krx_stocks():
     except Exception:
       continue
 
-  # 만약 영업일을 못 찾았다면 오늘 날짜 문자열 사용
   if not latest_day:
     latest_day = today_dt.strftime("%Y%m%d")
 

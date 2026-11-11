@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 from pykrx import stock
 import requests
@@ -6,10 +6,9 @@ from config import MIN_RESERVE_RATIO
 
 
 def load_krx_stocks():
-  """스팩, 우선주, 리츠 등을 제외한 코스피/코스닥 일반종목 로드"""
-  today = datetime.now().strftime("%Y%m%d")
-  latest_day = stock.get_nearest_business_day_in_a_week(today)
-
+  """스팩, 우선주, 리츠 등을 제외한 코스피/코스닥 일반종목 로드 (날짜 예외 처리 강화)"""
+  # 안전하게 오늘 날짜부터 역순으로 영업일 탐색
+  today_dt = datetime.now()
   stock_map = {}
   exclude_words = (
       "스팩",
@@ -23,13 +22,34 @@ def load_krx_stocks():
       "ETN",
   )
 
-  for market in ["KOSPI", "KOSDAQ"]:
-    tickers = stock.get_market_ticker_list(latest_day, market=market)
-    for t in tickers:
-      name = stock.get_market_ticker_name(t)
-      if t.endswith("0") and not name.endswith(exclude_words) and len(name) >= 2:
-        stock_map[name] = {"ticker": t, "market": market}
+  latest_day = None
+  for i in range(7):  # 최대 7일 전까지 탐색
+    target_date = (today_dt - timedelta(days=i)).strftime("%Y%m%d")
+    try:
+      tickers = stock.get_market_ticker_list(target_date, market="KOSPI")
+      if tickers and len(tickers) > 0:
+        latest_day = target_date
+        break
+    except Exception:
+      continue
 
+  # 만약 영업일을 못 찾았다면 오늘 날짜 문자열 사용
+  if not latest_day:
+    latest_day = today_dt.strftime("%Y%m%d")
+
+  print(f"[KRX] 기준일자: {latest_day} 종목 마스터 로드 시작...")
+
+  for market in ["KOSPI", "KOSDAQ"]:
+    try:
+      tickers = stock.get_market_ticker_list(latest_day, market=market)
+      for t in tickers:
+        name = stock.get_market_ticker_name(t)
+        if t.endswith("0") and not name.endswith(exclude_words) and len(name) >= 2:
+          stock_map[name] = {"ticker": t, "market": market}
+    except Exception as e:
+      print(f"[경고] {market} 종목 로드 중 예외 발생: {e}")
+
+  print(f"[KRX 로드 완료] 총 {len(stock_map)}개 일반종목 마스터 로드")
   return stock_map
 
 

@@ -1,4 +1,4 @@
-# 📈 Hankyung Real-time Stock News RSS Bot (GitHub Actions)
+# 📈 Hankyung Real-time Stock News RSS Bot (GitHub Actions) 작동 안 됩니다.~~( 부재중 )
 
 한국경제 RSS 피드를 실시간으로 모니터링하여, 뉴스 속 호재 키워드가 포함된 종목 중 **영업이익이 증가하고 유보율이 500% 이상인 우량 일반 종목**을 코스피 1개, 코스닥 1개씩 선별하여 매 12분마다 텔레그램으로 자동 발송해 주는 서버리스(Serverless) 파이썬 봇입니다.
 

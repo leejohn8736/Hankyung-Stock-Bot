@@ -26,3 +26,7 @@ TELEGRAM_CHAT_ID: 메시지를 받을 채팅방(또는 채널) ID
 레포지토리 Settings → Actions → General → Workflow permissions로 이동합니다.
 
 Read and write permissions를 체크하고 저장(Save)합니다. (자동 커밋/푸시 권한 부여)
+
+<img width="616" height="357" alt="image" src="https://github.com/user-attachments/assets/4b19a5f0-6eef-447a-9692-1b0d0957e77a" />
+
+

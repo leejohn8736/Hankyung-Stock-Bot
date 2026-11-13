@@ -4,6 +4,7 @@ import json
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone, timedelta
+import pandas as pd
 import FinanceDataReader as fdr
 
 # 1. 텔레그램 설정값 가져오기
@@ -48,16 +49,13 @@ def check_operating_time():
     return False
 
 def fetch_top_stocks():
-    """FinanceDataReader를 활용하여 안정적으로 국내 거래대금/상승률 상위 20개 종목 수집"""
+    """FinanceDataReader를 활용하여 안정적으로 국내 시가총액 상위 20개 종목 수집"""
     try:
         print("📊 KRX 주식 시장 데이터 조회 중...")
-        # KOSPI와 KOSDAQ 전체 목록 가져오기
         df_kospi = fdr.StockListing('KOSPI')
         df_kosdaq = fdr.StockListing('KOSDAQ')
         df_all = pd.concat([df_kospi, df_kosdaq], ignore_index=True)
         
-        # 거래대금(Marcap 또는 거래 관련 데이터가 있는 경우 정렬) 혹은 상위 거래 종목 추출
-        # 여기서는 안정적인 시가총액 및 거래량 데이터 활용 예시
         if 'Marcap' in df_all.columns:
             df_all = df_all.sort_values(by='Marcap', ascending=False)
         
@@ -67,7 +65,6 @@ def fetch_top_stocks():
             code = str(row.get('Code', ''))
             market = row.get('Market', 'KR')
             
-            # 임시 등락률 및 가격 정보 매핑 (API 안정성 확보)
             ranking_list.append({
                 "rank": len(ranking_list) + 1,
                 "name": name,
@@ -85,7 +82,6 @@ def fetch_top_stocks():
 def main():
     print("🚀 안정형 국내 주식 데이터 봇 실행 중...")
     
-    # 운영 시간 방어 로직
     if not check_operating_time():
         print("💤 현재 운영 시간이 아닙니다. (새벽 04시 ~ 저녁 23시 외 시간)")
         return
@@ -99,7 +95,6 @@ def main():
     kst = timezone(timedelta(hours=9))
     update_time_str = datetime.now(kst).strftime("%Y-%m-%d %H:%M:%S")
     
-    # 텔레그램 메시지 조립
     message_lines = [
         f"📈 <b>국내 증시 주요 종목 브리핑 TOP 20</b>",
         f"⏱ <i>기준 시각: {update_time_str} (KST)</i>\n",
@@ -118,5 +113,4 @@ def main():
         print("❌ 텔레그램 발송 실패")
 
 if __name__ == "__main__":
-    import pandas as pd
     main()

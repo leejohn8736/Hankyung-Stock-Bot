@@ -1,4 +1,4 @@
-name: Stock Ranking Alert Bot
+name: Stock Bot Automation
 
 on:
   schedule:
@@ -8,6 +8,7 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,14 +17,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 lxml
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run main.py
+      - name: Run main.py with Python Path
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python main.py
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python main.py

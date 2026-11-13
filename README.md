@@ -10,11 +10,16 @@
 
 
  # ⚙️ 설치 및 설정 방법
+ 
 ## 1. 필수 라이브러리 목록 (requirements.txt)
-Plaintext
+
+
+
 requests==2.32.3
 beautifulsoup4==4.12.3
 lxml==5.3.0
+
+
 2. 깃허브 시크릿(Secrets) 설정
 레포지토리의 Settings → Secrets and variables → Actions에서 아래 두 가지 비밀 값을 등록해야 텔레그램 발송이 정상 작동합니다.
 

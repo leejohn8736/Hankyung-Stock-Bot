@@ -1,54 +1,76 @@
-def fetch_stock_rankings():
-    """네이버 금융 실시간 주식 검색어 상위 20개 수집 (안정성 강화 버전)"""
-    url = "https://finance.naver.com/sise/lastsearch2.naver"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://finance.naver.com/"
-    }
-    
-    try:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as response:
-            html_bytes = response.read()
-            html_content = html_bytes.decode('euc-kr', 'replace')
-            
-        soup = BeautifulSoup(html_content, 'lxml')
-        
-        # 특정 클래스(.type_5)뿐만 아니라 페이지 내의 모든 주소 테이블 행(tr)을 유연하게 탐색
-        ranking_list = []
-        rows = soup.find_all('tr')
-        
-        for row in rows:
-            cols = row.find_all('td')
-            # 네이버 금융 검색 상위 테이블 행은 보통 10개 이상의 컬럼을 가짐
-            if len(cols) >= 10:
-                name_tag = cols[1].find('a')
-                if not name_tag or 'code=' not in name_tag.get('href', ''):
-                    continue
-                
-                try:
-                    rank = cols[0].text.strip()
-                    name = name_tag.text.strip()
-                    code = name_tag['href'].split('code=')[-1]
-                    search_ratio = cols[2].text.strip()
-                    current_price = cols[3].text.strip()
-                    change_rate = cols[5].text.strip()
-                    
-                    ranking_list.append({
-                        "rank": int(rank) if rank.isdigit() else len(ranking_list) + 1,
-                        "name": name,
-                        "code": code,
-                        "search_ratio": search_ratio,
-                        "price": current_price,
-                        "change_rate": change_rate
-                    })
-                    
-                    if len(ranking_list) >= 20:
-                        break
-                except Exception:
-                    continue
-                    
-        return ranking_list
-    except Exception as e:
-        print(f"❌ 주식 크롤링 오류: {e}")
-        return []
+name: Unified Stock Alert Bot
+
+on:
+  schedule:
+    # 한국 시간(KST) 기준 평일 오전 6시 40분 (UTC 21:40) & 오후 4시 40분 (UTC 07:40)
+    - cron: "40 21 * * 0-4"
+    - cron: "40 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "실행할 시장 선택 (KR / US / ALL)"
+        default: "ALL"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unified-stock-bot
+  cancel-in-progress: false
+
+jobs:
+  run-all-bots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # 만약 로컬 패키지 구조(setup.py 등)가 있다면 함께 설치
+          if [ -f setup.py ] || [ -f pyproject.toml ]; then pip install --editable .; fi
+
+      - name: Pick market (Optional parameter)
+        id: m
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            M="${{ github.event.inputs.market }}"
+          else
+            M="ALL"
+          fi
+          [ "$M" = "ALL" ] && M="KR US"
+          echo "markets=$M" >> "$GITHUB_OUTPUT"
+
+      - name: 1. Run Naver Stock Ranking & Briefing Bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "🚀 네이버 실시간 검색어 및 브리핑 봇 실행..."
+          if [ -f main.py ]; then python main.py; fi
+
+      - name: 2. Run BNF / Signal Stock Analysis Bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "📊 주식 신호 및 테마 분석 봇 실행..."
+          if [ -f bnf_signal.py ]; then python bnf_signal.py ${{ steps.m.outputs.markets }}; fi
+
+      - name: Commit and Push results (if any changed)
+        run: |
+          git config user.name "bot-runner"
+          git config user.email "bot-runner@users.noreply.github.com"
+          git add data/ docs/ data/ranking.json state/ || true
+          git diff --cached --quiet || git commit -m "auto: update stock rankings and signal data [skip ci]"
+          git pull --rebase && git push || echo "No changes to push or push skipped."

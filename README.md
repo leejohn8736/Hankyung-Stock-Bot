@@ -9,4 +9,13 @@
 구분설정 시간 (KST 기준)비고시스템 운영 허용 시간04:00 ~ 23:00외 시간대 실행 시 방어 로직 작동 (자동 종료)정기 텔레그램 발송 주기06:00 ~ 21:00 (2시간 간격)06시, 08시, 10시, 12시, 14시, 16시, 18시, 20시, 21시수동 테스트 실행상시 가능GitHub Actions 탭에서 Run workflow 클릭
 
 
-
+my-stock-rank/
+├── .github/
+│   └── workflows/
+│       └── run.yml             # GitHub Actions 자동 실행 워크플로우
+├── data/
+│   └── ranking.json            # 수집된 실시간 주식 검색어 순위 데이터
+├── main.py                     # 데이터 크롤링 및 텔레그램 발송 메인 코드
+├── index.html                  # 실시간 순위 조회 웹 프론트엔드 화면
+├── requirements.txt            # 파이썬 필수 외부 라이브러리 목록
+└── README.md                   # 프로젝트 안내 문서

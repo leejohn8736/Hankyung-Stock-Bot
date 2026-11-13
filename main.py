@@ -152,7 +152,7 @@ def source_naver_search():
 
 def source_daum_search():
     """다음 금융 실시간 검색 순위 (JSON)"""
-    url = "https://finance.daum.net/api/search/ranks?limit=10"
+    url = "https://finance.daum.net/api/search/ranks?limit=20"
     r = http_get(url, headers={
         "Referer": "https://finance.daum.net/",
         "Accept": "application/json, text/plain, */*",
@@ -267,8 +267,8 @@ def build_message(items, label, is_search, errors, now_str):
     if not is_search:
         lines += ["", "⚠️ 검색 순위 소스가 모두 실패해 대체 데이터(시가총액)를 보냈습니다."]
     if errors:
-        short = ", ".join(f"{k}" for k in errors)
-        lines += ["", f"ℹ️ 실패한 소스: {html.escape(short)}"]
+        for k, v in errors.items():
+            lines.append(f"ℹ️ 실패 {html.escape(k)}: {html.escape(v[:80])}")
     return "\n".join(lines)
 
 

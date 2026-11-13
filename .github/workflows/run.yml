@@ -2,14 +2,16 @@ name: Stock Ranking Alert Bot
 
 on:
   schedule:
-    # 한국 시간(KST) 기준 매일 06:00 ~ 21:00 사이 2시간 간격
+    # KST 06,08,10,12,14,16,18,20,21시 (UTC 기준 표기)
     - cron: '0 21,23,1,3,5,7,9,11,12 * * *'
-  workflow_dispatch: # 수동 테스트 실행 버튼 제공
+  workflow_dispatch:
+
+permissions:
+  contents: write   # data/ranking.json 자동 커밋용
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,16 +19,26 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'   # FinanceDataReader 호환을 위해 3.11 버전 사용
+          python-version: '3.11'
           cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
 
       - name: Run main.py
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: python main.py
+
+      - name: Commit ranking.json
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ranking.json 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update ranking.json" && git push)
